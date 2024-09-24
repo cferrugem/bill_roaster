@@ -1,21 +1,39 @@
+// server.js
+
 const express = require("express");
 const app = express();
-const cors = require("cors");
+require("dotenv").config();
+const morgan = require("morgan");
+const pool = require("./config/database");
 
-// Define CORS options
-const corsOptions = {
-  origin: ["http://localhost:5173"], // <- Change this to your React app
-};
+// Middleware
+app.use(express.json());
+app.use(morgan("dev"));
 
-// Apply CORS middleware
-app.use(cors(corsOptions));
+// Import routes
+const userRoutes = require("./routes/userRoutes");
 
-// Define a route
-app.get("/", (req, res) => {
-  res.json({ message: "Hello, world!" });
+// Routes
+app.use("/api/users", userRoutes);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    message: err.message || "Internal Server Error",
+  });
 });
 
 // Start the server
-app.listen(8000, () => {
-  console.log("Server started on http://localhost:8000");
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, async () => {
+  console.log(`Server is running on port ${PORT}`);
+
+  // Test database connection
+  try {
+    await pool.query("SELECT NOW()");
+    console.log("Database connected!");
+  } catch (error) {
+    console.error("Unable to connect to the database:", error);
+  }
 });
